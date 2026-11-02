@@ -8,9 +8,11 @@ const MAX_AGE_MS = 30000;
 const service = createLobbyService();
 
 export async function onRequestGet() {
-  const { json, ageMs } = await service.snapshot();
+  const { json, ageMs, complete } = await service.snapshot();
+  // 503 for an outdated list, or one a freshly started instance is still building:
+  // the page keeps what it shows and retries, usually reaching a warm instance.
   return new Response(json, {
-    status: ageMs > MAX_AGE_MS ? 503 : 200,
+    status: ageMs > MAX_AGE_MS || !complete ? 503 : 200,
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store',

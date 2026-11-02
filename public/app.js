@@ -236,10 +236,10 @@ async function poll() {
     save();
   } catch (e) {
     // Keep showing the current list and retry soon; only report a problem if it persists
-    // (the server answers 503 rather than hand out an outdated list).
+    // (the server answers 503 rather than hand out an outdated or half-built list).
     failures++;
     delay = 1500;
-    if (failures >= 3) lastError = e.message;
+    if (failures >= 5) lastError = e.message;
   }
   render();
   // Stop fetching while the tab is in the background; resumes on visibilitychange.
