@@ -1,0 +1,19 @@
+{
+  "name": "aoe2-lobby-observer",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Live list of open Age of Empires II: DE lobbies, using the official game API.",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "local": "node server.js",
+    "dev": "wrangler pages dev",
+    "deploy": "wrangler pages deploy",
+    "maps": "node scripts/extract-maps.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.156.2"
+  }
+}
