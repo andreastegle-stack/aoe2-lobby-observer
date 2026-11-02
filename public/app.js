@@ -109,13 +109,17 @@ function slotHtml(s) {
 function balanceHtml(l) {
   const b = suggestBalance(l.slots);
   if (!b) return '';
+  if (b.impossible) {
+    return `<div class="balance"><div class="balance-head">Balance suggestion</div>
+      <div class="sub">Too many players without a team: at most 2 players per team can be moved. Ask players to pick a team first.</div></div>`;
+  }
   const name = (p) => `${esc(p.name)} <span class="sub" style="display:inline">${p.value}${p.sure ? '' : '*'}</span>`;
   const teams = b.teams.map((t) => `<div><b>T${esc(t.label)}:</b> ${t.players.map(name).join(', ')}
     <span class="sub" style="display:inline">· avg ${t.avg}</span></div>`).join('');
   const moves = b.alreadyBest
     ? 'Current teams are already the most even split.'
     : b.moves.length ? `Moves: ${b.moves.map((m) => `${esc(m.name)} → T${esc(m.to)}`).join(', ')}` : '';
-  return `<div class="balance" title="2v2 split with the smallest gap. Average of 1v1 and team ratings, using only ladders with 40+ games.">
+  return `<div class="balance" title="Most even split changing at most 4 players (2 per team). Average of 1v1 and team ratings, using only ladders with 40+ games.">
     <div class="balance-head">Balance suggestion <span class="sub" style="display:inline">· difference ${b.diff}</span></div>
     ${teams}
     ${moves ? `<div class="sub">${moves}</div>` : ''}
