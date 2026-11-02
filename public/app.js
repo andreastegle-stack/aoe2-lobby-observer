@@ -107,7 +107,7 @@ function slotHtml(s) {
 }
 
 function balanceHtml(l) {
-  const b = l.maxPlayers > 2 ? suggestBalance(l.slots) : null;
+  const b = suggestBalance(l.slots);
   if (!b) return '';
   const name = (p) => `${esc(p.name)} <span class="sub" style="display:inline">${p.value}${p.sure ? '' : '*'}</span>`;
   const teams = b.teams.map((t) => `<div><b>T${esc(t.label)}:</b> ${t.players.map(name).join(', ')}
@@ -115,12 +115,24 @@ function balanceHtml(l) {
   const moves = b.alreadyBest
     ? 'Current teams are already the most even split.'
     : b.moves.length ? `Moves: ${b.moves.map((m) => `${esc(m.name)} → T${esc(m.to)}`).join(', ')}` : '';
-  return `<div class="balance" title="Average of 1v1 and team ratings, using only ladders with 40+ games. At most 2 players move from each team.">
+  return `<div class="balance" title="2v2 split with the smallest gap. Average of 1v1 and team ratings, using only ladders with 40+ games.">
     <div class="balance-head">Balance suggestion <span class="sub" style="display:inline">· difference ${b.diff}</span></div>
     ${teams}
     ${moves ? `<div class="sub">${moves}</div>` : ''}
     ${b.unsure ? '<div class="sub">* fewer than 40 games – rating uncertain (unrated counted as 1000)</div>' : ''}
+    <div><button class="btn small" data-act="copy-balance" data-id="${l.id}">Copy balance suggestion</button></div>
   </div>`;
+}
+
+// One line to paste into the game lobby chat, e.g. "T1: A, B (1512) | T2: C, D (1502)".
+function balanceText(l) {
+  const b = suggestBalance(l.slots);
+  return b.teams.map((t) => `T${t.label}: ${t.players.map((p) => p.name).join(', ')} (${t.avg})`).join(' | ');
+}
+
+async function copyText(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(`${label} copied`); }
+  catch { prompt('Copy this:', text); }
 }
 
 function detailsHtml(l) {
@@ -199,10 +211,14 @@ function renderStatus(shown) {
   else if (updatedAt) $('status-text').textContent = `${shown} of ${lobbies.length} lobbies · live`;
 }
 
+let failures = 0;
+
 async function poll() {
+  let delay = POLL_MS;
   try {
     const res = await fetch('/api/lobbies', { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    failures = 0;
     const data = await res.json();
     lastError = data.error && !data.updatedAt ? data.error : null;
     const ids = new Set(data.lobbies.map((l) => l.id));
@@ -215,22 +231,24 @@ async function poll() {
     for (const id of expanded) if (!ids.has(id)) expanded.delete(id);
     save();
   } catch (e) {
-    lastError = e.message;
+    // Keep showing the current list and retry soon; only report a problem if it persists
+    // (the server answers 503 rather than hand out an outdated list).
+    failures++;
+    delay = 1500;
+    if (failures >= 3) lastError = e.message;
   }
   render();
   // Stop fetching while the tab is in the background; resumes on visibilitychange.
-  pollTimer = document.hidden ? null : setTimeout(poll, POLL_MS);
+  pollTimer = document.hidden ? null : setTimeout(poll, delay);
 }
 
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && pollTimer == null) poll();
 });
 
-async function copyLink(id) {
+function copyLink(id) {
   // The game's own join link, as used in-game and on Discord.
-  const url = `aoe2de://0/${id}`;
-  try { await navigator.clipboard.writeText(url); toast('Join link copied'); }
-  catch { prompt('Copy this join link:', url); }
+  return copyText(`aoe2de://0/${id}`, 'Join link');
 }
 
 function toast(msg) {
@@ -249,6 +267,10 @@ $('rows').addEventListener('click', (e) => {
     e.stopPropagation();
     const id = Number(act.dataset.id);
     if (act.dataset.act === 'copy') copyLink(id);
+    if (act.dataset.act === 'copy-balance') {
+      const l = lobbies.find((x) => x.id === id);
+      if (l) copyText(balanceText(l), 'Balance suggestion');
+    }
     if (act.dataset.act === 'hide') {
       const i = settings.hidden.indexOf(id);
       if (i >= 0) settings.hidden.splice(i, 1); else settings.hidden.push(id);

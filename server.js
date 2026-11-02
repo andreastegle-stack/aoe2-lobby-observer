@@ -9,8 +9,8 @@ import { createLobbyService } from './lib/service.js';
 const PORT = Number(process.env.PORT) || 3000;
 const service = createLobbyService();
 // Keep data fresh between page loads so "Created" times are accurate locally.
-setInterval(() => service.snapshotJson(), 5000);
-service.snapshotJson();
+setInterval(() => service.snapshot(), 5000);
+service.snapshot();
 
 const PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
@@ -19,7 +19,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
 
   if (url.pathname === '/api/lobbies') {
-    const json = await service.snapshotJson();
+    const { json } = await service.snapshot();
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
     res.end(json);
     return;

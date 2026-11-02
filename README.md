@@ -11,9 +11,9 @@ function in `functions/` fetches and decodes the lobby data.
 - Live lobby list, refreshed every 5 seconds (paused while the tab is in the background)
 - Average lobby Elo (1v1 / team, Random Map / Empire Wars), search, exact map filter, sorting and filters
 - Click a lobby to see players, civilizations, teams and settings; hover a player for ratings
-- Team balance suggestion for lobbies with 4–8 players: the most even split of the average of
-  1v1 and team ratings (ladders with fewer than 40 games are ignored), moving at most 2
-  players from each team (`public/balance.js`)
+- 2v2 balance suggestion when a lobby has exactly 4 players: the most even split of the
+  average of 1v1 and team ratings (ladders with fewer than 40 games are ignored), with a
+  button to copy it for the lobby chat (`public/balance.js`)
 - One-click **Join** / **Watch** (opens the game), copy the lobby's `aoe2de://0/<id>` link, hide lobbies
 
 ## Running it locally

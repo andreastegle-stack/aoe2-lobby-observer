@@ -1,10 +1,10 @@
-// Team balance suggestion for a lobby: splits the human players into two teams with the
-// smallest average-rating gap, moving at most 2 players away from each team they picked.
+// Team balance suggestion for 2v2: when a lobby has exactly 4 human players (whatever its
+// size), splits them 2 against 2 with the smallest average-rating gap.
 // Plain script (no modules) so the page can load it directly; also exposes itself on
 // globalThis for testing in Node.
 (function () {
+  const PLAYERS = 4; // only 2v2 is balanced, 2 players per team
   const MIN_GAMES = 40; // fewer games than this and a ladder rating is not trusted
-  const MAX_MOVES_PER_TEAM = 2; // so at most 4 players move, whatever the lobby size
   const UNRATED = 1000; // stand-in for players with no rating at all
   const LADDERS = ['rm1v1', 'rmTeam'];
 
@@ -35,31 +35,30 @@
   function suggestBalance(slots) {
     const players = slots.filter((s) => s.kind === 'player')
       .map((s) => ({ name: s.name, team: s.team, ...balanceRating(s) }));
-    const n = players.length;
-    if (n < 4 || n > 8) return null;
+    if (players.length !== PLAYERS) return null;
     const [labelA, labelB] = teamLabels(players);
-    const sizeA = Math.ceil(n / 2);
 
     let best = null;
-    for (let mask = 0; mask < 1 << n; mask++) {
-      let size = 0;
-      for (let i = 0; i < n; i++) size += (mask >> i) & 1;
-      if (size !== sizeA) continue;
-      const a = [], b = [], moves = [];
-      let leftA = 0, leftB = 0;
-      players.forEach((p, i) => {
-        const inA = (mask >> i) & 1;
-        (inA ? a : b).push(p);
-        if (p.team === labelA && !inA) { leftA++; moves.push({ name: p.name, to: labelB }); }
-        if (p.team === labelB && inA) { leftB++; moves.push({ name: p.name, to: labelA }); }
-      });
-      if (leftA > MAX_MOVES_PER_TEAM || leftB > MAX_MOVES_PER_TEAM) continue;
-      const diff = Math.abs(avg(a) - avg(b));
-      if (!best || diff < best.diff || (diff === best.diff && moves.length < best.moves.length)) {
-        best = { diff, moves, teams: [{ label: labelA, players: a, avg: avg(a) }, { label: labelB, players: b, avg: avg(b) }] };
+    // Player 0 stays on side A, so each of the 3 possible 2v2 splits is tried once; the
+    // two ways of numbering the teams are both tried to keep players on teams they picked.
+    for (const partner of [1, 2, 3]) {
+      const sideA = [0, partner];
+      for (const [first, second] of [[labelA, labelB], [labelB, labelA]]) {
+        const a = [], b = [], moves = [];
+        players.forEach((p, i) => {
+          const inA = sideA.includes(i);
+          (inA ? a : b).push(p);
+          const to = inA ? first : second;
+          if (/^[1-4]$/.test(p.team) && p.team !== to) moves.push({ name: p.name, to });
+        });
+        const diff = Math.abs(avg(a) - avg(b));
+        if (!best || diff < best.diff || (diff === best.diff && moves.length < best.moves.length)) {
+          const teams = [{ label: first, players: a, avg: avg(a) }, { label: second, players: b, avg: avg(b) }]
+            .sort((x, y) => x.label - y.label);
+          best = { diff, moves, teams };
+        }
       }
     }
-    if (!best) return null;
     best.alreadyBest = best.moves.length === 0 && players.every((p) => p.team === labelA || p.team === labelB);
     best.unsure = players.some((p) => !p.sure);
     return best;
