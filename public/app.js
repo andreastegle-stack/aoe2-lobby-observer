@@ -185,7 +185,8 @@ document.addEventListener('visibilitychange', () => {
 });
 
 async function copyLink(id) {
-  const url = `${location.origin}/j/${id}`;
+  // The game's own join link, as used in-game and on Discord.
+  const url = `aoe2de://0/${id}`;
   try { await navigator.clipboard.writeText(url); toast('Join link copied'); }
   catch { prompt('Copy this join link:', url); }
 }
