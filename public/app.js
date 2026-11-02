@@ -106,6 +106,23 @@ function slotHtml(s) {
     <span class="who"><a class="player" href="https://www.aoe2insights.com/user/${s.profileId}/" target="_blank" rel="noopener" data-tip="${esc(tip)}">${esc(s.name)}</a>${civ}</span>${teamTag}</div>`;
 }
 
+function balanceHtml(l) {
+  const b = l.maxPlayers > 2 ? suggestBalance(l.slots) : null;
+  if (!b) return '';
+  const name = (p) => `${esc(p.name)} <span class="sub" style="display:inline">${p.value}${p.sure ? '' : '*'}</span>`;
+  const teams = b.teams.map((t) => `<div><b>T${esc(t.label)}:</b> ${t.players.map(name).join(', ')}
+    <span class="sub" style="display:inline">· avg ${t.avg}</span></div>`).join('');
+  const moves = b.alreadyBest
+    ? 'Current teams are already the most even split.'
+    : b.moves.length ? `Moves: ${b.moves.map((m) => `${esc(m.name)} → T${esc(m.to)}`).join(', ')}` : '';
+  return `<div class="balance" title="Average of 1v1 and team ratings, using only ladders with 40+ games. At most 2 players move from each team.">
+    <div class="balance-head">Balance suggestion <span class="sub" style="display:inline">· difference ${b.diff}</span></div>
+    ${teams}
+    ${moves ? `<div class="sub">${moves}</div>` : ''}
+    ${b.unsure ? '<div class="sub">* fewer than 40 games – rating uncertain (unrated counted as 1000)</div>' : ''}
+  </div>`;
+}
+
 function detailsHtml(l) {
   const facts = [
     ['Mode', l.mode], ['Map size', l.mapSize], ['Speed', l.speed], ['Population', l.population],
@@ -118,6 +135,7 @@ function detailsHtml(l) {
   return `<tr class="details"><td colspan="${cols}">
     <div class="facts">${facts.map(([k, v]) => `<span>${k}: <b>${esc(v)}</b></span>`).join('')}</div>
     <div class="slots">${l.slots.map(slotHtml).join('')}</div>
+    ${balanceHtml(l)}
     <div style="margin-top:10px">
       <button class="btn small ghost" data-act="copy" data-id="${l.id}">Copy link</button>
       <button class="btn small ghost" data-act="hide" data-id="${l.id}">${isHidden ? 'Unhide' : 'Hide'}</button>

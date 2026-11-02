@@ -119,6 +119,12 @@ tr.details > td { background: var(--surface-2); padding: 12px 14px; }
 }
 .slot.open, .slot.closed { color: var(--muted); font-style: italic; }
 
+.balance {
+  margin-top: 10px; padding: 8px 10px; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 6px; background: var(--surface); display: grid; gap: 3px;
+}
+.balance-head { font-weight: 600; }
+
 .empty { text-align: center; color: var(--muted); padding: 32px; }
 footer { padding: 0 16px 24px; color: var(--muted); font-size: 12px; text-align: center; }
 
