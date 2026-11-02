@@ -86,20 +86,24 @@ function visible() {
 
 function slotHtml(s) {
   if (s.kind === 'open' || s.kind === 'closed') {
-    return `<div class="slot ${s.kind}"><span class="team">·</span><span class="who">${s.kind === 'open' ? 'Open' : 'Closed'}</span></div>`;
+    return `<div class="slot ${s.kind}"><span class="color"></span><span class="who">${s.kind === 'open' ? 'Open' : 'Closed'}</span></div>`;
   }
-  // Same symbols as the game lobby: team number, "–" for no team, "?" for not chosen yet.
+  // Laid out like the game lobby: player colour on the left, team on the right.
+  // Team symbols as in the game: number, "–" for no team, "?" for not chosen yet.
+  const color = s.color
+    ? `<span class="color c${s.color}" title="Player colour ${s.color}">${s.color}</span>`
+    : '<span class="color" title="Colour not chosen">?</span>';
   const team = /^[1-4]$/.test(s.team) ? s.team : s.team === '-' ? '–' : '?';
   const teamTip = team === '–' ? 'No team' : team === '?' ? 'Team not chosen' : `Team ${team}`;
-  const badge = `<span class="team t${team}" title="${teamTip}">${team}</span>`;
+  const teamTag = `<span class="team-tag" title="${teamTip}">${team === '–' ? 'No team' : `Team ${team}`}</span>`;
   const civ = s.civ ? ` <span class="sub" style="display:inline">· ${esc(s.civ)}</span>` : '';
   if (s.kind === 'ai') {
-    return `<div class="slot">${badge}<span class="who">🤖 AI${civ}</span></div>`;
+    return `<div class="slot">${color}<span class="who">🤖 AI${civ}</span>${teamTag}</div>`;
   }
   const r = s.ratings || {};
   const tip = `1v1: ${r.rm1v1 ?? 'unrated'}\nTeam game: ${r.rmTeam ?? 'unrated'}`;
-  return `<div class="slot">${badge}
-    <span class="who"><a class="player" href="https://www.aoe2insights.com/user/${s.profileId}/" target="_blank" rel="noopener" data-tip="${esc(tip)}">${esc(s.name)}</a>${civ}</span></div>`;
+  return `<div class="slot">${color}
+    <span class="who"><a class="player" href="https://www.aoe2insights.com/user/${s.profileId}/" target="_blank" rel="noopener" data-tip="${esc(tip)}">${esc(s.name)}</a>${civ}</span>${teamTag}</div>`;
 }
 
 function detailsHtml(l) {

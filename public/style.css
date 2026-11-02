@@ -10,9 +10,7 @@
   --live: #2e9e5b;
   --danger: #c2412d;
   --row-hover: #f6efe0;
-  --new: #fff3d1;
-  --team-1: #3a6fd8; --team-2: #d23f3f; --team-3: #2e9e5b; --team-4: #c28a12;
-}
+  --new: #fff3d1;}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #121417; --surface: #1b1f24; --surface-2: #20252b; --border: #2f353d;
@@ -96,9 +94,17 @@ tr.details > td { background: var(--surface-2); padding: 12px 14px; }
 .facts b { color: var(--text); font-weight: 600; }
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
 .slot { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); min-width: 0; }
-.slot .team { min-width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--muted); }
-.slot .team.t1 { background: var(--team-1); } .slot .team.t2 { background: var(--team-2); }
-.slot .team.t3 { background: var(--team-3); } .slot .team.t4 { background: var(--team-4); }
+/* Player colour box, same numbers and colours as the game. */
+.slot .color {
+  min-width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; color: var(--muted); border: 1px solid var(--border); background: var(--surface-2);
+}
+.slot .color[class*=" c"] { border-color: transparent; color: #fff; }
+.slot .color.c1 { background: #2f5bd8; } .slot .color.c2 { background: #d42a2a; }
+.slot .color.c3 { background: #2c9b3c; } .slot .color.c4 { background: #f1d21c; color: #1d1b17; }
+.slot .color.c5 { background: #1fc2c9; color: #1d1b17; } .slot .color.c6 { background: #9a3fc4; }
+.slot .color.c7 { background: #8a8a8a; } .slot .color.c8 { background: #ee8a1c; color: #1d1b17; }
+.slot .team-tag { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .slot .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .slot:has(.player:hover, .player:focus-visible) { overflow: visible; }
 .slot .who:has(.player:hover, .player:focus-visible) { overflow: visible; }
