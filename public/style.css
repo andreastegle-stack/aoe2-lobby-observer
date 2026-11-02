@@ -43,10 +43,12 @@ a { color: var(--accent); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .status.live .dot { background: var(--live); box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 25%, transparent); }
 .status.error .dot { background: var(--danger); }
-#search {
+#search, #map-filter {
   flex: 1 1 220px; max-width: 340px; padding: 7px 10px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit;
 }
+#map-filter { flex: 0 1 200px; }
+#map-filter.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
 .btn {
   padding: 7px 12px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent);

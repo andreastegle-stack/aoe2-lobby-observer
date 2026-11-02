@@ -3,7 +3,7 @@ const POLL_MS = 5000;
 const STORE_KEY = 'lobby-observer-settings';
 
 const DEFAULTS = {
-  ladder: 'auto', minElo: '', maxElo: '', hideFull: false, hidePassword: false,
+  ladder: 'auto', map: '', minElo: '', maxElo: '', hideFull: false, hidePassword: false,
   hideCustom: false, showHidden: false, sort: 'firstSeen', dir: 'desc', hidden: [],
 };
 
@@ -56,6 +56,7 @@ function visible() {
   const hidden = new Set(settings.hidden);
   const rows = lobbies.filter((l) => {
     if (!settings.showHidden && hidden.has(l.id)) return false;
+    if (settings.map && l.map !== settings.map) return false; // exact, so "Nomad" excludes "Land Nomad"
     if (settings.hideFull && l.filled >= l.maxPlayers) return false;
     if (settings.hidePassword && l.password) return false;
     if (settings.hideCustom && (l.scenario || l.dataMod)) return false;
@@ -87,14 +88,17 @@ function slotHtml(s) {
   if (s.kind === 'open' || s.kind === 'closed') {
     return `<div class="slot ${s.kind}"><span class="team">·</span><span class="who">${s.kind === 'open' ? 'Open' : 'Closed'}</span></div>`;
   }
+  // Same symbols as the game lobby: team number, "–" for no team, "?" for not chosen yet.
   const team = /^[1-4]$/.test(s.team) ? s.team : s.team === '-' ? '–' : '?';
+  const teamTip = team === '–' ? 'No team' : team === '?' ? 'Team not chosen' : `Team ${team}`;
+  const badge = `<span class="team t${team}" title="${teamTip}">${team}</span>`;
   const civ = s.civ ? ` <span class="sub" style="display:inline">· ${esc(s.civ)}</span>` : '';
   if (s.kind === 'ai') {
-    return `<div class="slot"><span class="team t${team}">${team}</span><span class="who">🤖 AI${civ}</span></div>`;
+    return `<div class="slot">${badge}<span class="who">🤖 AI${civ}</span></div>`;
   }
   const r = s.ratings || {};
   const tip = `1v1: ${r.rm1v1 ?? 'unrated'}\nTeam game: ${r.rmTeam ?? 'unrated'}`;
-  return `<div class="slot"><span class="team t${team}">${team}</span>
+  return `<div class="slot">${badge}
     <span class="who"><a class="player" href="https://www.aoe2insights.com/user/${s.profileId}/" target="_blank" rel="noopener" data-tip="${esc(tip)}">${esc(s.name)}</a>${civ}</span></div>`;
 }
 
@@ -138,8 +142,24 @@ function rowHtml(l) {
   </tr>${expanded.has(l.id) ? detailsHtml(l) : ''}`;
 }
 
+// Map dropdown: every map in the current lobby list with its lobby count, plus the chosen
+// map even when no lobby uses it right now. Left alone while open so it doesn't jump.
+function renderMapOptions() {
+  const sel = $('map-filter');
+  sel.classList.toggle('active', !!settings.map);
+  if (document.activeElement === sel) return;
+  const counts = new Map();
+  for (const l of lobbies) counts.set(l.map, (counts.get(l.map) || 0) + 1);
+  if (settings.map && !counts.has(settings.map)) counts.set(settings.map, 0);
+  const maps = [...counts.keys()].sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = `<option value="">All maps</option>` +
+    maps.map((m) => `<option value="${esc(m)}">${esc(m)} (${counts.get(m)})</option>`).join('');
+  sel.value = settings.map;
+}
+
 function render() {
   for (const l of lobbies) l.elo = lobbyElo(l);
+  renderMapOptions();
   const rows = visible();
   $('rows').innerHTML = rows.map(rowHtml).join('');
   $('empty').hidden = rows.length > 0;
@@ -232,7 +252,7 @@ for (const th of document.querySelectorAll('th[data-sort]')) {
 }
 
 const BINDINGS = [
-  ['ladder', 'ladder', 'value'], ['min-elo', 'minElo', 'value'], ['max-elo', 'maxElo', 'value'],
+  ['ladder', 'ladder', 'value'], ['map-filter', 'map', 'value'], ['min-elo', 'minElo', 'value'], ['max-elo', 'maxElo', 'value'],
   ['hide-full', 'hideFull', 'checked'], ['hide-password', 'hidePassword', 'checked'],
   ['hide-custom', 'hideCustom', 'checked'], ['show-hidden', 'showHidden', 'checked'],
 ];

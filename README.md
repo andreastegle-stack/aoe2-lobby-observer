@@ -9,7 +9,7 @@ function in `functions/` fetches and decodes the lobby data.
 ## Features
 
 - Live lobby list, refreshed every 5 seconds (paused while the tab is in the background)
-- Average lobby Elo (1v1 / team, Random Map / Empire Wars), search, sorting and filters
+- Average lobby Elo (1v1 / team, Random Map / Empire Wars), search, exact map filter, sorting and filters
 - Click a lobby to see players, civilizations, teams and settings; hover a player for ratings
 - One-click **Join** / **Watch** (opens the game), copy the lobby's `aoe2de://0/<id>` link, hide lobbies
 
