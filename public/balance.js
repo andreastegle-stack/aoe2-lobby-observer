@@ -1,7 +1,17 @@
-// Team balance suggestion: splits a lobby's human players (4–8) into two equal teams with
-// the smallest average-rating gap, while changing at most 4 players: at most 2 put on each
-// team. A player counts as changed when they end up on another team than the one they
-// picked, including players who haven't picked a team yet. Everyone else stays put.
+// Team balance suggestion for lobbies with 4–8 human players.
+//
+// At most 4 players are balanced, 2 put on each team: a player counts as balanced when
+// they are moved to the other team or placed on a team they haven't picked yet. Everyone
+// else keeps their current team, and players without a team who aren't placed keep "?".
+//
+// Who gets balanced is prioritised by how reliable their rating is:
+//   tier 1: 40+ games in 1v1 or team RM, tier 2: fewer games, tier 3: no games.
+// The suggestion places as many tier-1 players as possible, then tier 2, then tier 3.
+// Within that, it places the players with the most effect first: those furthest from the
+// lobby's average rating (the highest and lowest), since leaving them on a random team
+// skews the game most. Then it picks the smallest average-rating gap, and when that
+// ties, prefers moving reliable players and moving fewer players.
+//
 // Plain script (no modules) so the page can load it directly; also exposes itself on
 // globalThis for testing in Node.
 (function () {
@@ -10,17 +20,17 @@
   const UNRATED = 1000; // stand-in for players with no rating at all
   const LADDERS = ['rm1v1', 'rmTeam'];
 
-  // Average of 1v1 RM and team RM, using only ladders with at least 40 games. If neither
-  // qualifies, the ladder with the most games is used and the value is marked unsure.
+  // Rating used for balancing: the average of 1v1 RM and team RM over ladders with 40+
+  // games (tier 1). Otherwise the ladder with the most games (tier 2), or 1000 (tier 3).
   function balanceRating(slot) {
     const r = slot.ratings || {};
     const g = slot.games || {};
     const trusted = LADDERS.filter((k) => r[k] != null && (g[k] || 0) >= MIN_GAMES);
     if (trusted.length) {
-      return { value: Math.round(trusted.reduce((sum, k) => sum + r[k], 0) / trusted.length), sure: true };
+      return { value: Math.round(trusted.reduce((sum, k) => sum + r[k], 0) / trusted.length), tier: 1 };
     }
     const any = LADDERS.filter((k) => r[k] != null).sort((a, b) => (g[b] || 0) - (g[a] || 0));
-    return { value: any.length ? r[any[0]] : UNRATED, sure: false };
+    return any.length ? { value: r[any[0]], tier: 2 } : { value: UNRATED, tier: 3 };
   }
 
   // The two team numbers players picked most (1 and 2 if nobody picked).
@@ -32,46 +42,67 @@
     return labels.sort();
   }
 
-  const avg = (ps) => Math.round(ps.reduce((sum, p) => sum + p.value, 0) / ps.length);
+  const avg = (ps) => (ps.length ? Math.round(ps.reduce((sum, p) => sum + p.value, 0) / ps.length) : 0);
+
+  // Lexicographic comparison of score arrays: smaller is better.
+  function better(x, y) {
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i];
+    return false;
+  }
 
   // Returns null for lobbies outside 4–8 players, and { impossible: true } when the
-  // teams can't be made equal by changing at most 2 players per team.
+  // picked teams are too lopsided to fix by changing at most 2 players per team.
   function suggestBalance(slots) {
     const players = slots.filter((s) => s.kind === 'player')
       .map((s) => ({ name: s.name, team: s.team, ...balanceRating(s) }));
     const n = players.length;
     if (n < 4 || n > 8) return null;
-    const [labelA, labelB] = teamLabels(players);
-    const sizeA = Math.ceil(n / 2);
+    const labels = teamLabels(players);
+    const maxTeamSize = Math.ceil(n / 2);
+    const lobbyAvg = avg(players);
+    // Where each player can end up: either team, or staying unplaced if they have no team.
+    const options = players.map((p) => (labels.includes(p.team) ? labels : [...labels, null]));
 
     let best = null;
-    for (let mask = 0; mask < 1 << n; mask++) {
-      let size = 0;
-      for (let i = 0; i < n; i++) size += (mask >> i) & 1;
-      if (size !== sizeA) continue;
-      // With uneven teams either label may get the bigger side; with even teams both
-      // orders are still tried so players stay on the team number they picked.
-      for (const [first, second] of [[labelA, labelB], [labelB, labelA]]) {
-        const a = [], b = [], moves = [];
-        const changedTo = { [first]: 0, [second]: 0 };
-        players.forEach((p, i) => {
-          const inA = (mask >> i) & 1;
-          (inA ? a : b).push(p);
-          const to = inA ? first : second;
-          if (p.team !== to) { changedTo[to]++; moves.push({ name: p.name, to }); }
-        });
-        if (changedTo[first] > MAX_CHANGED_PER_TEAM || changedTo[second] > MAX_CHANGED_PER_TEAM) continue;
-        const diff = Math.abs(avg(a) - avg(b));
-        if (!best || diff < best.diff || (diff === best.diff && moves.length < best.moves.length)) {
-          const teams = [{ label: first, players: a, avg: avg(a) }, { label: second, players: b, avg: avg(b) }]
-            .sort((x, y) => x.label - y.label);
-          best = { diff, moves, teams };
-        }
+    const choice = new Array(n);
+    (function search(i) {
+      if (i < n) {
+        for (const o of options[i]) { choice[i] = o; search(i + 1); }
+        return;
       }
-    }
+      const teams = { [labels[0]]: [], [labels[1]]: [] };
+      const changedTo = { [labels[0]]: 0, [labels[1]]: 0 };
+      const unplaced = [], moves = [];
+      const unplacedByTier = [0, 0, 0];
+      let unplacedEffect = 0; // how far the players left on a random team are from the average
+      let movedPriority = 0;
+      players.forEach((p, k) => {
+        const to = choice[k];
+        if (to == null) {
+          unplaced.push(p);
+          unplacedByTier[p.tier - 1]++;
+          unplacedEffect += Math.abs(p.value - lobbyAvg);
+          return;
+        }
+        teams[to].push(p);
+        if (p.team !== to) { changedTo[to]++; moves.push({ name: p.name, to }); movedPriority += p.tier; }
+      });
+      if (changedTo[labels[0]] > MAX_CHANGED_PER_TEAM || changedTo[labels[1]] > MAX_CHANGED_PER_TEAM) return;
+      if (teams[labels[0]].length > maxTeamSize || teams[labels[1]].length > maxTeamSize) return;
+      if (!teams[labels[0]].length || !teams[labels[1]].length) return;
+      const diff = Math.abs(avg(teams[labels[0]]) - avg(teams[labels[1]]));
+      const score = [...unplacedByTier, unplacedEffect, diff, movedPriority, moves.length];
+      if (!best || better(score, best.score)) {
+        best = {
+          score, diff, moves, unplaced,
+          teams: labels.map((l) => ({ label: l, players: teams[l], avg: avg(teams[l]) })),
+        };
+      }
+    })(0);
+
     if (!best) return { impossible: true };
     best.alreadyBest = best.moves.length === 0;
-    best.unsure = players.some((p) => !p.sure);
+    best.unsure = players.some((p) => p.tier > 1);
     return best;
   }
 

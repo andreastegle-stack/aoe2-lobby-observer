@@ -111,19 +111,24 @@ function balanceHtml(l) {
   if (!b) return '';
   if (b.impossible) {
     return `<div class="balance"><div class="balance-head">Balance suggestion</div>
-      <div class="sub">Too many players without a team: at most 2 players per team can be moved. Ask players to pick a team first.</div></div>`;
+      <div class="sub">The picked teams are too uneven to fix by moving at most 2 players per team.</div></div>`;
   }
-  const name = (p) => `${esc(p.name)} <span class="sub" style="display:inline">${p.value}${p.sure ? '' : '*'}</span>`;
+  // Tier 1: 40+ games; tier 2: fewer games (marked *); tier 3: no games (shown as unrated).
+  const rating = (p) => (p.tier === 3 ? 'unrated' : `${p.value}${p.tier === 2 ? '*' : ''}`);
+  const name = (p) => `${esc(p.name)} <span class="sub" style="display:inline">${rating(p)}</span>`;
   const teams = b.teams.map((t) => `<div><b>T${esc(t.label)}:</b> ${t.players.map(name).join(', ')}
     <span class="sub" style="display:inline">· avg ${t.avg}</span></div>`).join('');
   const moves = b.alreadyBest
     ? 'Current teams are already the most even split.'
-    : b.moves.length ? `Moves: ${b.moves.map((m) => `${esc(m.name)} → T${esc(m.to)}`).join(', ')}` : '';
-  return `<div class="balance" title="Most even split changing at most 4 players (2 per team). Average of 1v1 and team ratings, using only ladders with 40+ games.">
+    : `Moves: ${b.moves.map((m) => `${esc(m.name)} → T${esc(m.to)}`).join(', ')}`;
+  const unplaced = b.unplaced.length
+    ? `<div class="sub">Not balanced, keep random team: ${b.unplaced.map(name).join(', ')}</div>` : '';
+  return `<div class="balance" title="Changes at most 4 players (2 per team). Players with 40+ games are balanced first, then fewer games, then unrated; within that, the highest and lowest rated first.">
     <div class="balance-head">Balance suggestion <span class="sub" style="display:inline">· difference ${b.diff}</span></div>
     ${teams}
-    ${moves ? `<div class="sub">${moves}</div>` : ''}
-    ${b.unsure ? '<div class="sub">* fewer than 40 games – rating uncertain (unrated counted as 1000)</div>' : ''}
+    ${unplaced}
+    <div class="sub">${moves}</div>
+    ${b.unsure ? '<div class="sub">* fewer than 40 games – rating uncertain; unrated players count as 1000</div>' : ''}
     <div><button class="btn small" data-act="copy-balance" data-id="${l.id}">Copy balance suggestion</button></div>
   </div>`;
 }
