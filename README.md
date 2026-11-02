@@ -38,7 +38,7 @@ Then open http://localhost:8788. `npm run dev` runs the site in Cloudflare's own
 | Lobby service | `lib/service.js` | Fetches the lobby list (at most every 5 s), adds player ratings (cached 15 min), keeps "first seen" times. Used by both Cloudflare and the local server. |
 | Decoder | `lib/decode.js` | Unpacks each lobby's compressed settings and player slots (map, mode, size, civ, team). |
 | Map names | `data/maps.json` | Map string id → name, extracted from the game's own string files. |
-| Cloudflare | `functions/` | `/api/lobbies`, plus `/j/<id>` and `/w/<id>` redirects that open the game. |
+| Cloudflare | `functions/` | `/api/lobbies`, plus `/j/<id>` and `/w/<id>` redirects that open the game. The built list is shared through Cloudflare's cache, so only one request per data centre rebuilds it every ~5 s; that keeps each request well inside the free plan's 10 ms CPU limit. |
 | Web page | `public/` | Table with search, filters, sorting and expandable lobby details. |
 
 Data sources (official AoE2 DE API, `aoe-api.worldsedgelink.com`):
