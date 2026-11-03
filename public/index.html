@@ -3,9 +3,78 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AoE2 Lobby Observer</title>
-  <meta name="description" content="Live list of open Age of Empires II: Definitive Edition lobbies.">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>AoE2 Lobby Observer – Live Age of Empires II: DE Lobby Browser</title>
+  <meta name="description" content="Live list of every open Age of Empires II: DE lobby with average Elo, map and players. Filter by map and Elo, balance teams and join in one click.">
+  <link rel="canonical" href="https://aoe2-lobby.pages.dev/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#121417">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="alternate" type="text/markdown" href="/lobbies.md" title="Open lobbies as Markdown">
+  <link rel="alternate" type="application/json" href="/api/lobbies" title="Open lobbies as JSON">
+
+  <!-- Link previews (Discord, Reddit, X, Facebook, Slack …) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AoE2 Lobby Observer">
+  <meta property="og:title" content="AoE2 Lobby Observer – Live AoE2 DE Lobby Browser">
+  <meta property="og:description" content="Every open Age of Empires II: DE lobby, live: Elo, map, players and teams. Filter, balance teams and join in one click.">
+  <meta property="og:url" content="https://aoe2-lobby.pages.dev/">
+  <meta property="og:image" content="https://aoe2-lobby.pages.dev/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="AoE2 Lobby Observer: a live table of Age of Empires II lobbies with Elo, map and players">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AoE2 Lobby Observer – Live AoE2 DE Lobby Browser">
+  <meta name="twitter:description" content="Every open Age of Empires II: DE lobby, live: Elo, map, players and teams.">
+  <meta name="twitter:image" content="https://aoe2-lobby.pages.dev/og-image.png">
+
+  <!-- Structured data for search engines and AI assistants -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "@id": "https://aoe2-lobby.pages.dev/#app",
+        "name": "AoE2 Lobby Observer",
+        "url": "https://aoe2-lobby.pages.dev/",
+        "description": "Live browser for open Age of Empires II: Definitive Edition multiplayer lobbies, with average Elo, map and player details, filters, team balance suggestions and one-click join.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (web browser); joining requires Age of Empires II: DE on PC",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "image": "https://aoe2-lobby.pages.dev/og-image.png",
+        "about": { "@type": "VideoGame", "name": "Age of Empires II: Definitive Edition" },
+        "featureList": [
+          "Live list of all open AoE2 DE lobbies, refreshed every 5 seconds",
+          "Average lobby Elo from 1v1 and team ladders",
+          "Exact map filter, Elo range and search",
+          "Players, civilizations, colours and teams per lobby",
+          "Team balance suggestions that can be copied into the lobby chat",
+          "One-click join and spectate links"
+        ],
+        "codeRepository": "https://github.com/andreastegle-stack/aoe2-lobby-observer",
+        "license": "https://opensource.org/licenses/MIT"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "How do I join an AoE2 lobby from this site?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Click Join on a lobby. It opens Age of Empires II: DE directly in that lobby (link format aoe2de://0/<lobby id>). The game must be installed on the same PC." } },
+          { "@type": "Question", "name": "What does the Elo column show?",
+            "acceptedAnswer": { "@type": "Answer", "text": "The average rating of the players in the lobby: team Random Map rating for team lobbies and 1v1 rating for 1v1 lobbies by default. You can switch to 1v1, team or Empire Wars ratings under Filters." } },
+          { "@type": "Question", "name": "How does the team balance suggestion work?",
+            "acceptedAnswer": { "@type": "Answer", "text": "For lobbies with 4 to 8 players it suggests the most even teams by changing at most 4 players, 2 per team. It uses the average of each player's 1v1 and team rating, ignoring ladders with fewer than 40 games, and balances experienced players and the highest and lowest rated first." } },
+          { "@type": "Question", "name": "Where does the lobby data come from?",
+            "acceptedAnswer": { "@type": "Answer", "text": "From the official Age of Empires II: DE game servers (the same lobby list the game shows), refreshed every 5 seconds. Ratings come from the official leaderboards." } },
+          { "@type": "Question", "name": "Is this a replacement for aoe2lobby.com?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. AoE2 Lobby Observer is a free, open-source successor to the lobby browser at aoe2lobby.com/lobby, which is no longer maintained." } }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -58,7 +127,42 @@
       <tbody id="rows"></tbody>
     </table>
     <p id="empty" class="empty" hidden>No lobbies match your filters.</p>
+    <noscript><p class="empty">The live lobby list needs JavaScript. Without it, see the
+      <a href="/lobbies.md">open lobbies as plain text</a>.</p></noscript>
   </main>
+
+  <section class="about" aria-labelledby="about-title">
+    <h2 id="about-title">Live Age of Empires II: DE lobby browser</h2>
+    <p>AoE2 Lobby Observer shows every open multiplayer lobby in Age of Empires II: Definitive
+      Edition as it happens: title, map, game mode, players, civilizations, teams and the
+      lobby's average Elo. Filter by exact map or Elo range, search for a player, and join in
+      one click. It is a free, open-source successor to the aoe2lobby.com lobby browser.</p>
+
+    <h2>Frequently asked questions</h2>
+    <h3>How do I join a lobby?</h3>
+    <p>Click <b>Join</b>. Your game opens directly in that lobby (the link looks like
+      <code>aoe2de://0/518271971</code>). Age of Empires II: DE must be installed on the same PC.
+      <b>Watch</b> appears when a lobby allows spectators. The copy button copies the same
+      join link, for example to share on Discord.</p>
+    <h3>What does the Elo column show?</h3>
+    <p>The average rating of the players in the lobby: team Random Map rating for team lobbies
+      and 1v1 rating for 1v1 lobbies. Under <b>Filters</b> you can switch to 1v1, team or
+      Empire Wars ratings and set a minimum or maximum Elo. Hover a player's name in an opened
+      lobby to see their 1v1 and team ratings.</p>
+    <h3>How does the team balance suggestion work?</h3>
+    <p>Open a lobby with 4 to 8 players to see the most even teams you can reach by changing at
+      most 4 players, 2 per team. Each player's rating is the average of their 1v1 and team
+      rating, ignoring ladders with fewer than 40 games. Experienced players are balanced first,
+      then players with few games, then unrated players, and the highest and lowest rated
+      before the rest. <b>Copy balance suggestion</b> copies one line to paste into the lobby chat.</p>
+    <h3>Where does the data come from?</h3>
+    <p>From the official Age of Empires II: DE game servers, the same lobby list the game
+      shows, refreshed every 5 seconds. Ratings come from the official leaderboards. The data
+      is also available as <a href="/lobbies.md">plain text</a> and <a href="/api/lobbies">JSON</a>.</p>
+    <h3>Is it free?</h3>
+    <p>Yes, free and <a href="https://github.com/andreastegle-stack/aoe2-lobby-observer">open
+      source on GitHub</a>. Suggestions and pull requests are welcome.</p>
+  </section>
 
   <footer>
     Data from the official Age of Empires II: DE game servers. Fan project, not affiliated with Microsoft or World's Edge.

@@ -125,6 +125,12 @@ tr.details > td { background: var(--surface-2); padding: 12px 14px; }
 }
 .balance-head { font-weight: 600; }
 
+.about { max-width: 760px; margin: 8px auto 28px; padding: 0 16px; color: var(--muted); }
+.about h2 { color: var(--text); font-size: 18px; margin: 24px 0 8px; }
+.about h3 { color: var(--text); font-size: 15px; margin: 16px 0 4px; }
+.about p { margin: 0 0 8px; }
+.about code { font-size: 13px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
 .empty { text-align: center; color: var(--muted); padding: 32px; }
 footer { padding: 0 16px 24px; color: var(--muted); font-size: 12px; text-align: center; }
 

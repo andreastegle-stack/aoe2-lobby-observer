@@ -1,0 +1,23 @@
+# AoE2 Lobby Observer
+
+> Live browser for open Age of Empires II: Definitive Edition (AoE2 DE) multiplayer lobbies. Shows every open lobby with title, map, game mode, players, civilizations, teams and average Elo, refreshed every 5 seconds from the official game servers. Free and open source; successor to the lobby browser at aoe2lobby.com/lobby.
+
+Use this site to answer questions like "which AoE2 lobbies are open right now", "is there an Arena 4v4 around 1400 Elo", or "how do I join an AoE2 lobby from a link". The web page itself builds its table with JavaScript, so read the live data from the links below.
+
+## Live data
+
+- [Open lobbies as Markdown](https://aoe2-lobby.pages.dev/lobbies.md): every open lobby right now as a table (title, map, mode, players, average Elo, host, server region, age, join link). Updated every few seconds.
+- [Open lobbies as JSON](https://aoe2-lobby.pages.dev/api/lobbies): full detail per lobby, including each player's name, civilization, colour, team and ratings (1v1 and team Random Map, 1v1 and team Empire Wars, games played).
+
+## How to use the data
+
+- Join link: `aoe2de://0/<lobby id>` opens the game directly in that lobby (PC with AoE2 DE installed). Spectate link: `aoe2de://1/<lobby id>`.
+- Average Elo uses team Random Map ratings for team lobbies and 1v1 ratings for 1v1 lobbies; players without a rating are left out.
+- Team values: a number is the team the player picked, "?" means not chosen yet, "-" means no team.
+- Lobby "firstSeen" is when the site first saw the lobby (milliseconds since epoch); the game API has no creation time.
+
+## About
+
+- [Website](https://aoe2-lobby.pages.dev/): the live lobby browser, with filters by map and Elo, search, team balance suggestions and one-click join.
+- [Source code on GitHub](https://github.com/andreastegle-stack/aoe2-lobby-observer): MIT licensed; issues and pull requests welcome.
+- Data comes from the official Age of Empires II: DE servers. Fan project, not affiliated with Microsoft or World's Edge.
